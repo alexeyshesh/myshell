@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <limits.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #define ANSI_COLOR_RED     "\x1b[31m"

@@ -226,12 +226,12 @@ void simple_cmd(token_list **t, int *status, int *conv_desc) {
     }
     argv[argc] = NULL;
 
-    cmd_exec(t, command, argv, conv_desc);
+    cmd_exec(t, command, argv, conv_desc, status);
 
     free(argv);
 }
 
-void cmd_exec(token_list **t, char *command, char **argv, int *conv_desc) {
+void cmd_exec(token_list **t, char *command, char **argv, int *conv_desc, int *status) {
 
     if (strcmp("cd", command) == 0) {
         if (argv[1] == NULL)
@@ -254,14 +254,16 @@ void cmd_exec(token_list **t, char *command, char **argv, int *conv_desc) {
             dup2(conv_desc[1], 1);
         close(conv_desc[0]);
         close(conv_desc[1]);
-        if (execvp(command, argv) == -1)
-            printf("%s: command not found\n", command);
-        exit(0);
+        if (execvp(command, argv) == -1) {
+            fprintf(stderr, "%s: command not found\n", command);
+        }
+        exit(100);
     } else {
+        int child_status;
         dup2(conv_desc[0], 0);
         close(conv_desc[0]);
         close(conv_desc[1]);
-        waitpid(child, NULL, 0);
+        waitpid(child, &child_status, 0);
         return;
     }
 }

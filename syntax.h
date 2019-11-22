@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <fcntl.h>
 #include <signal.h>
 
@@ -24,7 +25,7 @@ void out_redirect(token_list **t, int *status);
 
 void conveyor(token_list **t, int *status, int *conv_desc);
 void simple_cmd(token_list **t, int *status, int *conv_desc);
-void cmd_exec(token_list **t, char *command, char **argv, int *conv_desc);
+void cmd_exec(token_list **t, char *command, char **argv, int *conv_desc, int *status);
 
 int iscmdtoken(token_list *token);
 
