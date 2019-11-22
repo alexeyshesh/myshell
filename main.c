@@ -9,6 +9,7 @@
 #include "syntax.h"
 
 int main(int argc, char **argv) {
+    /* Now we use Git ! */
     signal(SIGINT, SIG_IGN);
     int in_desc = 0; /* input file descriptor */
     if (argc == 1) {
@@ -38,4 +39,5 @@ int main(int argc, char **argv) {
         }
     }
     return 0;
+    printf("Now we use Git");
 }
