@@ -24,10 +24,15 @@ void in_redirect(token_list **t, int *status);
 void out_redirect(token_list **t, int *status);
 
 void conveyor(token_list **t, int *status, int *conv_desc);
+void conv_exec(token_list **t, int *status, int *conv_desc);
 void simple_cmd(token_list **t, int *status, int *conv_desc);
 void cmd_exec(token_list **t, char *command, char **argv, int *conv_desc, int *status);
 
 int iscmdtoken(token_list *token);
+
+int isbgcmd(token_list *token);
+void set_background_mode(); 
+void unset_background_mode();   
 
 /*
 <shell_cmd> ::= <condition_cmd> { [; | &] <shell_cmd> } { [; | &] }

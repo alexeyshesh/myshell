@@ -9,6 +9,27 @@ int iscmdtoken(token_list *token) {
            !strcmp(";", token->token);
 }
 
+int isbgcmd(token_list *t) {
+    int brackets = 0;
+    while (t) {
+        if (strcmp(t->token, "(") == 0)
+            brackets++;
+        if (strcmp(t->token, ")") == 0)
+            brackets--;
+        
+        if (brackets == 0 && strcmp(t->token, "&") == 0)
+            return 1;
+        if (brackets == 0 && strcmp(t->token, ";") == 0 || brackets < 0)
+            return 0;
+        t = t->next;    
+    }
+    return 0;
+}
+
+void set_background_mode() {
+        
+}
+
 int syntax_analysis(token_list *t) {
     int status = 0;
     shell_cmd(&t, &status);
@@ -19,7 +40,14 @@ int syntax_analysis(token_list *t) {
 }
 
 void shell_cmd(token_list **t, int *status) {
+    if (isbgcmd(*t)) {
+        set_background_mode();  
+    } else {
+        unset_background_mode();    
+    }
+    
     condition_cmd(t, status);
+    
     if (!(*t) || *status != 0)
         return;
     if ((*t)->next) {
@@ -83,7 +111,11 @@ void cmd(token_list **t, int *status) {
                 cmd(t, status);
         }
     }
+    token_list *t_tmp = *t;
     conveyor(t, status, conv_desc);
+    if (*status == 0) {
+        conv_exec(&t_tmp, status, conv_desc);    
+    }
     /* if i/o files descriptors changed return them to the old state */
     dup2(old_in_desc, 0);
     dup2(old_out_desc, 1);
@@ -144,7 +176,7 @@ void in_redirect(token_list **t, int *status) {
             dup2(in_desc, 0);
             close(in_desc);
         } else {
-            printf("Can not open file `%s`\n", (*t)->token);
+            fprintf(stderr, "Error: can not open file `%s`\n", (*t)->token);
             *status = -11;
             return;
         }
@@ -174,7 +206,7 @@ void out_redirect(token_list **t, int *status) {
             dup2(out_desc, 1);
             close(out_desc);
         } else {
-            printf("Can not open file `%s`\n", (*t)->token);
+            fprintf(stderr, "Error: can not open file `%s`\n", (*t)->token);
             *status = -12;
             return;
         }
@@ -190,11 +222,28 @@ void conveyor(token_list **t, int *status, int *conv_desc) {
         return;
     }
 
-    simple_cmd(t, status, conv_desc);
+    while (!iscmdtoken(*t))
+        (*t) = (*t)->next;
+    
     if ((*t)) {
         if (strcmp((*t)->token, "|") == 0) {
             (*t) = (*t)->next;
             conveyor(t, status, conv_desc);
+        }
+    }
+}
+
+void conv_exec(token_list **t, int *status, int *conv_desc) {
+    if (!(*t) || *status != 0) {
+        *status = -9;
+        return;
+    }
+
+    simple_cmd(t, status, conv_desc);
+    if ((*t)) {
+        if (strcmp((*t)->token, "|") == 0) {
+            (*t) = (*t)->next;
+            conv_exec(t, status, conv_desc);
         }
     }
 }
@@ -237,7 +286,7 @@ void cmd_exec(token_list **t, char *command, char **argv, int *conv_desc, int *s
         if (argv[1] == NULL)
             argv[1] = getenv("HOME");
         if (chdir(argv[1]) != 0) {
-            printf("%s: no such file or directory\n", argv[1]);
+            fprintf(stderr, "%s: no such file or directory\n", argv[1]);
         }
         return;
     }
