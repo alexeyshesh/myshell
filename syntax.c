@@ -103,7 +103,7 @@ void cmd(token_list **t, int *status) {
     }
 
     token_list *t_tmp = *t;
-    conveyor(&t_tmp, status, conv_desc);
+    conveyor(&t_tmp, status);
     log_msg((*t)->token);
     if (*status == 0) {
         if (!fork()) {
@@ -219,7 +219,7 @@ void out_redirect(token_list **t, int *status) {
     }
 }
 
-void conveyor(token_list **t, int *status, int *conv_desc) {
+void conveyor(token_list **t, int *status) {
     if (!(*t) || *status != 0) {
         *status = -9;
         return;
@@ -231,7 +231,7 @@ void conveyor(token_list **t, int *status, int *conv_desc) {
     if ((*t)) {
         if (strcmp((*t)->token, "|") == 0) {
             (*t) = (*t)->next;
-            conveyor(t, status, conv_desc);
+            conveyor(t, status);
         }
     }
 }
