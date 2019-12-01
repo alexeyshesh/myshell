@@ -9,6 +9,7 @@
 #include <unistd.h>
 
 #define ANSI_COLOR_RED     "\x1b[31m"
+#define ANSI_COLOR_MAGENTA "\x1b[35m"
 #define ANSI_COLOR_RESET   "\x1b[0m"
 
 enum error_code {
@@ -26,6 +27,7 @@ typedef enum error_code error_code;
 
 void fatal_error(error_code code, ...); /* Exits program, probably with message */
 void print_cwd(); /* Prints current working directory */
+void log_msg(char *msg);
 void clear_screen();
 
 #endif // CONFIG

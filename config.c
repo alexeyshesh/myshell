@@ -72,3 +72,7 @@ void clear_screen() {
         return;
     }
 }
+
+void log_msg(char *msg) {
+    printf(ANSI_COLOR_MAGENTA "\n%s" ANSI_COLOR_RESET "\n", msg);
+}

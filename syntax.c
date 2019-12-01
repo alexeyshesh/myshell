@@ -19,16 +19,13 @@ int isbgcmd(token_list *t) {
         
         if (brackets == 0 && strcmp(t->token, "&") == 0)
             return 1;
-        if (brackets == 0 && strcmp(t->token, ";") == 0 || brackets < 0)
+        if ((brackets == 0 && strcmp(t->token, ";") == 0) || brackets < 0)
             return 0;
         t = t->next;    
     }
     return 0;
 }
 
-void set_background_mode() {
-        
-}
 
 int syntax_analysis(token_list *t) {
     int status = 0;
@@ -40,11 +37,6 @@ int syntax_analysis(token_list *t) {
 }
 
 void shell_cmd(token_list **t, int *status) {
-    if (isbgcmd(*t)) {
-        set_background_mode();  
-    } else {
-        unset_background_mode();    
-    }
     
     condition_cmd(t, status);
     
@@ -98,39 +90,50 @@ void cmd(token_list **t, int *status) {
         }
     }
     
-    int conv_desc[2]; // file descriptors for conveyor
+    int conv_desc[2]; // file descriptors for conveyorecho 
     /* save descriptors before redirection */
     int old_in_desc = dup(0), old_out_desc = dup(1);
     if (strcmp((*t)->token, ">") == 0 || strcmp((*t)->token, "<") == 0 || strcmp((*t)->token, ">>") == 0) {
-        
-
         io_redirect(t, status);
-
+        
         if (*t) {
             if (strcmp((*t)->token, ">") == 0 || strcmp((*t)->token, "<") == 0 || strcmp((*t)->token, ">>") == 0)
                 cmd(t, status);
         }
     }
+
     token_list *t_tmp = *t;
-    conveyor(t, status, conv_desc);
+    conveyor(&t_tmp, status, conv_desc);
+    log_msg((*t)->token);
     if (*status == 0) {
-        conv_exec(&t_tmp, status, conv_desc);    
+        if (!fork()) {
+            if (isbgcmd(*t)) {
+                int null_desc;
+                if ((null_desc = open("/dev/null", O_RDONLY)) != -1) {
+                    dup2(null_desc, 0);
+                    close(null_desc);
+                    signal(SIGINT, SIG_IGN);
+                } else {
+                    fprintf(stderr, "Error... so sad........\n");
+                    *status = -11;
+                    return;
+                }
+            } else {
+                signal(SIGINT, SIG_DFL);
+            }
+            conv_exec(t, status, conv_desc);
+            log_msg(strcat(">", (*t)->token));
+            if (strcmp(";", (*t)->token) == 0 || strcmp("&", (*t)->token) == 0) {
+                // exit(0);
+            }
+        } else {
+            if (!isbgcmd(*t)) 
+                wait(NULL);
+        }
     }
     /* if i/o files descriptors changed return them to the old state */
     dup2(old_in_desc, 0);
     dup2(old_out_desc, 1);
-    /* 
-
-    conveyor(t, status);
-    if (!(*t) || *status != 0)
-        return;
-    if (strcmp((*t)->token, ">") == 0 || strcmp((*t)->token, "<") == 0) {
-        io_redirect(t, status);
-        return;
-    }
-
-    */
-
 }
 
 void io_redirect(token_list **t, int *status) {
@@ -238,12 +241,13 @@ void conv_exec(token_list **t, int *status, int *conv_desc) {
         *status = -9;
         return;
     }
-
     simple_cmd(t, status, conv_desc);
     if ((*t)) {
         if (strcmp((*t)->token, "|") == 0) {
             (*t) = (*t)->next;
             conv_exec(t, status, conv_desc);
+        } else if (strcmp(";", (*t)->token) == 0 || strcmp("&", (*t)->token) == 0) {
+            // exit();
         }
     }
 }
@@ -294,11 +298,9 @@ void cmd_exec(token_list **t, char *command, char **argv, int *conv_desc, int *s
     int child;
     if (pipe(conv_desc) < 0) 
         fatal_error(PIPE_ERR);
-
     if ((child = fork()) < 0) {
         fatal_error(PROC);
     } else if (child == 0) {
-        signal(SIGINT, SIG_DFL);
         if (*t && strcmp((*t)->token, "|") == 0)
             dup2(conv_desc[1], 1);
         close(conv_desc[0]);

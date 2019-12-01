@@ -38,6 +38,8 @@ int main(int argc, char **argv) {
             clear_token_list(q);
         }
     }
+
+    while(wait(NULL) != -1);
+    
     return 0;
-    printf("Now we use Git");
 }
